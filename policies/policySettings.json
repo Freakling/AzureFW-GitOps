@@ -1,0 +1,45 @@
+﻿[
+    {
+        "name":  "fwpolicy",
+        "childPolicies":  [
+                              "/subscriptions/4d0765d1-ab75-4420-b750-2fafe654e5a9/resourcegroups/firewall/providers/Microsoft.Network/firewallPolicies/sub-fwpolicy"
+                          ],
+        "ruleCollectionGroups":  {
+                                     "id":  {
+
+                                            },
+                                     "name":  "fwpolicy/rulecollgroup",
+                                     "priority":  100,
+                                     "ruleCollections":  [
+                                                             {
+                                                                 "name":  "app-rulecoll",
+                                                                 "priority":  500,
+                                                                 "action":  {
+                                                                                "type":  "Allow"
+                                                                            }
+                                                             },
+                                                             {
+                                                                 "name":  "net-rulecoll",
+                                                                 "priority":  200,
+                                                                 "action":  {
+                                                                                "type":  "Allow"
+                                                                            }
+                                                             }
+                                                         ]
+                                 }
+    },
+    {
+        "name":  "sub-fwpolicy",
+        "childPolicies":  [
+                              null
+                          ],
+        "ruleCollectionGroups":  {
+                                     "id":  {
+
+                                            },
+                                     "name":  null,
+                                     "priority":  null,
+                                     "ruleCollections":  null
+                                 }
+    }
+]
