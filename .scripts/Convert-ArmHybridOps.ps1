@@ -46,19 +46,6 @@ Process{
             }
         }
         
-        #Assert folders for firewall and rule coll groups
-        # DO I NEED THIS? I think so since ruleCollGroups are unique per policy, right?
-        $policies | Foreach-Object{
-            $policyName = $_.name
-            New-Item "$PolicyFolder\$policyName" -ItemType Directory -Force
-            Try{
-                $_.ruleCollectionGroups | Foreach-object{
-                    New-Item "$PolicyFolder\$policyName\$($_.id.split('/')[-1])" -ItemType Directory -Force
-                }
-            }
-            Catch{}
-        }
-
         #Process all rule collection groups
         $ruleCollectionGroups = @()
         $resources | Where-Object {$_.type -eq 'Microsoft.Network/firewallPolicies/ruleCollectionGroups'} | Foreach-object{
@@ -96,7 +83,44 @@ Process{
         #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
         $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Out-File $PolicyFolder\policySettings.json -Encoding utf8 -Force
 
+        #Assert folders for firewall and rule coll groups
+        # DO I NEED THIS? I think so since ruleCollGroups are unique per policy, right?
+        $policies | Foreach-Object{
+            $policyName = $_.name
+            New-Item "$PolicyFolder\$policyName" -ItemType Directory -Force
+            Try{
+                $_.ruleCollectionGroups | Foreach-object{
+                    $ruleCollGroup = $_.name.split('/')[-1]
+                    New-Item "$PolicyFolder\$policyName\$ruleCollGroup" -ItemType Directory -Force
+                    $_.ruleCollections | Foreach-Object{
+                        New-Item "$PolicyFolder\$policyName\$ruleCollGroup\$($_.name)" -ItemType Directory -Force
+                    }
+
+                }
+            }
+            Catch{}
+        }
         
+        #What now?
+        #Create CSV Files?
+        $resources | Where-Object {$_.type -eq 'Microsoft.Network/firewallPolicies/ruleCollectionGroups'} | Foreach-object{
+            $thisRuleCollGroup = $_
+            $thisRuleCollGroup.properties.ruleCollections | Foreach-Object{
+                $ruleColl = $_
+                If($ruleColl.rules.count -ge 1){
+                    $AllProperties = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
+                    $AllProperties -join ',' | out-file "$PolicyFolder\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.Rules[0].ruleType).csv"
+                    $AllPropertiesExpression = "`"$(($AllProperties | Foreach-object{'$($_.{0})' -f $_}) -join ',')`""
+                    $ruleColl.rules | Foreach-object{(Invoke-Expression $allPropertiesExpression)}  | out-file "$PolicyFolder\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.Rules[0].ruleType).csv" -append
+                }
+            }
+        }
+
+        #$AllProperties = 0..$users.count | Foreach-object{$users[$_] | get-member -membertype NoteProperty | Select -ExpandProperty Name} | Select -unique | Sort-Object
+        #$AllProperties -join ',' | out-file "$outFile.csv"
+        #$AllPropertiesExpression = "`"$(($AllProperties | Foreach-object{'$($_.{0})' -f $_}) -join ',')`""
+        #$users | Foreach-object{(Invoke-Expression $allPropertiesExpression)}  | out-file "$outFile.csv" -append
+
         #$FwFiles | Foreach-object{
         #    $thisContent = Get-Content $_.FullName | ConvertFrom-Json
         #    $thisContent.resources | Foreach-Object{
