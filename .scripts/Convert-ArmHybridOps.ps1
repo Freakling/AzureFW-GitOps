@@ -83,8 +83,7 @@ Process{
         #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
         $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Out-File $PolicyFolder\policySettings.json -Encoding utf8 -Force
 
-        #Assert folders for firewall and rule coll groups
-        # DO I NEED THIS? I think so since ruleCollGroups are unique per policy, right?
+        #Assert folders for firewall and ruleCollGroups
         $policies | Foreach-Object{
             $policyName = $_.name
             New-Item "$PolicyFolder\$policyName" -ItemType Directory -Force
@@ -101,20 +100,40 @@ Process{
             Catch{}
         }
         
-        #What now?
-        #Create CSV Files?
+        #Create CSV files, one per folder.
         $resources | Where-Object {$_.type -eq 'Microsoft.Network/firewallPolicies/ruleCollectionGroups'} | Foreach-object{
             $thisRuleCollGroup = $_
             $thisRuleCollGroup.properties.ruleCollections | Foreach-Object{
                 $ruleColl = $_
                 If($ruleColl.rules.count -ge 1){
-                    $AllProperties = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
-                    $AllProperties -join ',' | out-file "$PolicyFolder\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.Rules[0].ruleType).csv"
-                    $AllPropertiesExpression = "`"$(($AllProperties | Foreach-object{'$($_.{0})' -f $_}) -join ',')`""
-                    $ruleColl.rules | Foreach-object{(Invoke-Expression $allPropertiesExpression)}  | out-file "$PolicyFolder\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.Rules[0].ruleType).csv" -append
+                    $thisCsvFile = "$PolicyFolder\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv"
+                    
+                    # We sort the output for readability. This might cause issues if apiVersion breaks it. Just use default then.
+                    # https://docs.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template#firewallpolicyrule-objects-1
+                    Switch($ruleColl.rules[0].ruleType){
+                        "ApplicationRule"{
+                            $headers = 'name','ruleType','destinationAddresses','fqdnTags','protocols','sourceAddresses','sourceIpGroups','targetFqdns','targetUrls','terminateTLS','webCategories'
+                        }
+                        "NatRule"{
+                            $headers = 'name','ruleType','destinationAddresses','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups','translatedAddress','translatedFqdn','translatedPort'
+                        }
+                        "NetworkRule"{
+                            $headers = 'name','ruleType','destinationAddresses','destinationFqdns','destinationIpGroups','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups'
+                        }
+                        Default{
+                            Write-Warning "No sorting found!"
+                            #Auto sorting
+                            $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
+                        }
+                    }
+                    $headers -join ',' | out-file $thisCsvFile
+                    $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join ',')`""
+                    $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)}  | out-file $thisCsvFile -append
                 }
             }
         }
+
+        
 
         #$AllProperties = 0..$users.count | Foreach-object{$users[$_] | get-member -membertype NoteProperty | Select -ExpandProperty Name} | Select -unique | Sort-Object
         #$AllProperties -join ',' | out-file "$outFile.csv"
