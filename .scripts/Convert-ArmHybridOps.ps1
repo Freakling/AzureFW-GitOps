@@ -271,7 +271,7 @@ Begin{
     }
 }
 Process{
-    #Read arm settings to csv, this overwrites the current setup
+    #Read arm settings to csv, use -merge to avoid overwriting the current setup
     ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder -Merge
 
     #Writes csv rules and settings to arm templates

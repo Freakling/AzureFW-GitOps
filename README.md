@@ -3,7 +3,7 @@
 This project intends to simplify and improve the user experience of authoring/configuring Azure Firewall Policies and rules.
 It provides a two-way sync of rules and configuration allowing hybrid IaC & ClickOps Azure FW policy authoring.
 
-In short the intention is to invent a new "way of working" with Azure Firewalls which I hope is more plesant than the current OOBE.
+In short the intention is to invent a new "way of working" with Azure Firewalls which I hope is more pleasant than the current OOBE.
 
 ## How it works
 
@@ -109,6 +109,8 @@ Be careful with priority when editing this, as deployment will fail if there are
  - To enable two way sync the AzOps Pull pipeline must be run before a push, otherwise it will overwrite changes made in the portal that has not been pulled in.
  - The delimiter should to be ',' This is configurable in the script by setting the var $delimiter in the begin block. space (' ') and semicolon (';') is reserved
 
-# Features to add
-Create fwPolicies by defining them here
+# TODO
+- Create fwPolicies by defining them here
+- pipeline integration
+- videos going step-by-step on how to implement and use
 
