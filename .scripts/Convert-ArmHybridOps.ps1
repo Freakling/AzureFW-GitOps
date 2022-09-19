@@ -14,10 +14,12 @@ Begin{
     # Formats JSON in a nicer format than the built-in ConvertTo-Json does.
     # Thanks to Kody for providing this excellent function (https://stackoverflow.com/users/1754995/kody)
     # https://stackoverflow.com/questions/57329639/powershell-convert-to-json-is-bad-format/57329852#57329852
+
+    $delimiter = ',' # "`t"
+
     function Format-Json([Parameter(Mandatory, ValueFromPipeline)][String] $json) {
         $indent = 0;
-        ($json -Split '\n' |
-        % {
+        ($json -Split '\n' | foreach-object {
             if ($_ -match '[\}\]]') {
             # This line contains  ] or }, decrement the indentation level
             $indent--
@@ -132,15 +134,15 @@ Begin{
                             $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
                         }
                     }
-                    $headers -join ',' | out-file $thisCsvFile
-                    $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join ',')`""
+                    $headers -join $delimiter | out-file $thisCsvFile
+                    $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $delimiter)`""
                     $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)}  | out-file $thisCsvFile -append
                 }
             }
         }
     }
 
-    Function ConverTo-ArmFw {
+    Function ConvertTo-ArmFw {
     Param(
         $ArmFolder,
         $PolicyFolder,
@@ -149,12 +151,9 @@ Begin{
     )
         #Read all policy files
         $settings = Get-Item -LiteralPath "$PolicyFolder\policySettings.json" | Get-Content | ConvertFrom-Json
-        $ruleFiles = Get-ChildItem -LiteralPath $PolicyFolder -Recurse -File -filter "*.csv"
-        
+                
         #Get all files in firewall folder
         $rgFiles = Get-ChildItem -LiteralPath $ArmFolder
-        #microsoft.network_firewallpolicies-fwpolicy
-        #microsoft.network_firewallpolicies_rulecollectiongroups-fwpolicy_rulecollgroup.json
 
         #Write settings to ARM Templates
         $settings | ForEach-Object{
@@ -170,7 +169,7 @@ Begin{
             #LETS DO THIS LATER
 
             #Write csv files
-            $settings.ruleCollectionGroups | Foreach-Object{
+            $thisFwPolicy.ruleCollectionGroups | Where-Object {$_} | Foreach-Object{
                 $thisRuleCollGroup = $_
                 $ruleCollGroupFile = $fwRuleCollGroupFileFormat -f $thisFwPolicy.name,$($thisruleCollGroup.name.split('/')[-1])
                 
@@ -206,46 +205,71 @@ Begin{
                     $theseRules = @()
                     #set all rules
                     $csvFiles | Foreach-object{
-                        $file = $_
-
-                        $type = $file.Name -replace '.csv',''
-                        switch($type){
-                            "ApplicationRule"{
-                                #$headers = 'name','ruleType','destinationAddresses','fqdnTags','protocols','sourceAddresses','sourceIpGroups','targetFqdns','targetUrls','terminateTLS','webCategories'
-                            }
-                            "NatRule"{
-                                #$headers = 'name','ruleType','destinationAddresses','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups','translatedAddress','translatedFqdn','translatedPort'
-                            }
-                            "NetworkRule"{
-                                #$headers = 'name','ruleType','destinationAddresses','destinationFqdns','destinationIpGroups','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups'
-                            }
-                            Default{ #Auto sorting
-                                throw "Can't process $($file.name)"
+                        $rules = Import-csv -LiteralPath $_.FullName -Delimiter $delimiter
+                        #Need to make sure these are correct datatype
+                        # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
+                        $rules | ForEach-Object {
+                            $rule = $_
+                            switch($rule.ruleType){
+                                "ApplicationRule"{
+                                    [array]$rule.destinationAddresses = $rule.destinationAddresses
+                                    [array]$rule.fqdnTags = $rule.fqdnTags
+                                    [array]$rule.protocols = $rule.protocols
+                                    [array]$rule.sourceAddresses = $rule.sourceAddresses
+                                    [array]$rule.sourceIpGroups = $rule.sourceIpGroups
+                                    [array]$rule.targetFqdns = $rule.targetFqdns
+                                    [array]$rule.targetUrls = $rule.targetUrls
+                                    [array]$rule.webCategories = $rule.webCategories
+                                    
+                                    #transform this object to a true array of objects
+                                    $protocols = @()
+                                    $rule.protocols | Foreach-object {
+                                        $thisRow = [pscustomobject]@{}
+                                        
+                                        $data = $_.split(';')
+                                        $data | Foreach-Object {
+                                            $cleaned = $_.TrimStart('@{').TrimEnd('}').Trim()
+                                            $thisRow | Add-Member -Type NoteProperty -Name $cleaned.split('=')[0] -Value $cleaned.split('=')[1]
+                                        }
+                                        $protocols += $thisRow
+                                    }
+                                    $rule.protocols = $protocols
+                                }
+                                "NatRule"{
+                                    [array]$rule.destinationAddresses = $rule.destinationAddresses.split(' ')
+                                    [array]$rule.destinationPorts = $rule.destinationPorts.split(' ')
+                                    [array]$rule.ipProtocols = $rule.ipProtocols.split(' ')
+                                    [array]$rule.sourceAddresses = $rule.sourceAddresses.split(' ')
+                                    [array]$rule.sourceIpGroups = $rule.sourceIpGroups.split(' ')
+                                }
+                                "NetworkRule"{
+                                    [array]$rule.destinationAddresses = $rule.destinationAddresses.split(' ')
+                                    [array]$rule.destinationFqdns = $rule.destinationFqdns.split(' ')
+                                    [array]$rule.destinationIpGroups = $rule.destinationIpGroups.split(' ')
+                                    [array]$rule.destinationPorts = $rule.destinationPorts.split(' ')
+                                    [array]$rule.ipProtocols = $rule.ipProtocols.split(' ')
+                                    [array]$rule.sourceAddresses = $rule.sourceAddresses.split(' ')
+                                    [array]$rule.sourceIpGroups = $rule.sourceIpGroups.split(' ')
+                                }
+                                default{}
                             }
                         }
+                        $theseRules += $rules
                     }
-                    $thisArmruleColl.rules[0]
-
+                    $thisArmRuleColl.rules = $theseRules
                 }
-                
-                $thisArmResource
-                $thisRuleCollGroup
 
-                $ruleCollGroupData
-
+                #write new settings to arm template
+                ($ruleCollGroupData | ConvertTo-Json -Depth 100).replace('""','') | Format-Json | Out-File "$ArmFolder\$ruleCollGroupFile"
             }
-
         }
-        #Write settings to rulecollectiongroups
-        $ruleColls | ForEach-Object{
-            $thisColl = $_
-            
-        }
-
     }
 }
 Process{
-    #Read arm settings and update before merging
+    #Read arm settings to csv, this overwrites the current setup
     ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
+
+    #Writes csv rules and settings to arm templates
+    ConvertTo-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
 }
 End{}
