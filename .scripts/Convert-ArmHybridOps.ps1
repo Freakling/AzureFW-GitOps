@@ -36,7 +36,8 @@ Begin{
     Function ConvertFrom-ArmFw {
     Param(
         $ArmFolder,
-        $PolicyFolder
+        $PolicyFolder,
+        [switch]$Merge
     )
         #Extract all resources from ARM files
         $resources = @()
@@ -134,9 +135,13 @@ Begin{
                             $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
                         }
                     }
-                    $headers -join $delimiter | out-file $thisCsvFile
+                    If($Merge -eq $false){$headers -join $delimiter | Out-File $thisCsvFile}
                     $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $delimiter)`""
-                    $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)}  | out-file $thisCsvFile -append
+                    $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append
+                    If($Merge -eq $true){
+                        $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
+                        $mergedContent | Out-File $thisCsvFile
+                    }
                 }
             }
         }
@@ -267,7 +272,7 @@ Begin{
 }
 Process{
     #Read arm settings to csv, this overwrites the current setup
-    ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
+    ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder -Merge
 
     #Writes csv rules and settings to arm templates
     ConvertTo-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
