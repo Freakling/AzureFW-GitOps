@@ -5,7 +5,7 @@ It provides a two-way sync of rules and configuration allowing hybrid IaC & Clic
 
 In short the intention is to invent a new "way of working" with Azure Firewalls which I hope is more pleasant than the current OOBE.
 
-## How it works
+# How it works
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
 
@@ -18,9 +18,25 @@ To properly use this script it is recommended to integrate it into your ci/cd pi
 - [Azure DevOps Pipelines](.devops)
 - [Github Actions](.github/workflows)
 
-### Azure ARM templates -> HybridOps FW IaC
+## Azure ARM templates -> HybridOps FW IaC
 
-# Setup/More information
+```
+ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder -Merge
+```
+The above command reads ARM templates for ``Microsoft.Network/firewallPolicies`` and ``Microsoft.Network/firewallPolicies/ruleCollectionGroups`` resources and generates a easy to read ``policySettings.json`` and csv files that are easy to edit for ApplicationRules, NatRules and NetworkRules.
+
+``$ArmFolder`` is the AzOps resource group folder where Firewall resides.
+
+``$PolicyFolder`` is the folder where you intend to place the HybridOps content.
+
+The switch parameter ``-Merge`` specifies that updates from ARM is merged with any rules written in rule files. This is only recommended if hybrid authoring mode is preferred. For immutable mode is preferred ``-Merge`` should be avoided. 
+
+## HybridOps FW IaC -> Azure ARM templates
+```
+ConvertTo-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
+```
+The above command reads settings from ``PolicyFolder`` and writes to AzOps resource group specified by ``$ArmFolder``. The function is not capbable of creating files on its own nor does it associate policies with firewalls or other policies. See Todo for more information
+# Setup More information
 ## AzOps file structure
 ```
 📂<resourceGroupFolder>
@@ -110,6 +126,7 @@ Be careful with priority when editing this, as deployment will fail if there are
  - The delimiter should to be ',' This is configurable in the script by setting the var $delimiter in the begin block. space (' ') and semicolon (';') is reserved
 
 # TODO
+- Update so that the script can write to fwPolicy files. Currently it cannot associate child fw policies or rulecollectiongroups
 - Create fwPolicies by defining them here
 - pipeline integration
 - videos going step-by-step on how to implement and use
