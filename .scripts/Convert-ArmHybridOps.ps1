@@ -6,6 +6,9 @@ Param(
 Begin{
     <#
     .\.scripts\Convert-ArmHybridOps.ps1 -ArmFolder 'C:\git\AzOps-Accelerator\root\frk4-avanade (4d0765d1-ab75-4420-b750-2fafe654e5a9)\firewall' -PolicyFolder 'C:\git\AzureFW-HybridOps\policies'
+    #Testing
+    $ArmFolder = 'C:\git\AzOps-Accelerator\root\frk4-avanade (4d0765d1-ab75-4420-b750-2fafe654e5a9)\firewall' 
+    $PolicyFolder = 'C:\git\AzureFW-HybridOps\policies'
     #>
 
     # Formats JSON in a nicer format than the built-in ConvertTo-Json does.
@@ -140,9 +143,105 @@ Begin{
     Function ConverTo-ArmFw {
     Param(
         $ArmFolder,
-        $PolicyFolder
+        $PolicyFolder,
+        $fwPolicyFileFormat = 'microsoft.network_firewallpolicies-{0}.json',
+        $fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json'
     )
+        #Read all policy files
+        $settings = Get-Item -LiteralPath "$PolicyFolder\policySettings.json" | Get-Content | ConvertFrom-Json
+        $ruleFiles = Get-ChildItem -LiteralPath $PolicyFolder -Recurse -File -filter "*.csv"
         
+        #Get all files in firewall folder
+        $rgFiles = Get-ChildItem -LiteralPath $ArmFolder
+        #microsoft.network_firewallpolicies-fwpolicy
+        #microsoft.network_firewallpolicies_rulecollectiongroups-fwpolicy_rulecollgroup.json
+
+        #Write settings to ARM Templates
+        $settings | ForEach-Object{
+            $thisFwPolicy = $_
+            $fwPolicyFile = $fwPolicyFileFormat -f $thisFwPolicy.name
+            
+            #Write fwPolicy files
+            #Create new files if none exist
+            If(-not($rgFiles.Name -contains $fwPolicyFile)){
+                Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+            }
+            #$fwPolicyData = Get-content "$ArmFolder\$fwPolicyFile" | ConvertFrom-Json
+            #LETS DO THIS LATER
+
+            #Write csv files
+            $settings.ruleCollectionGroups | Foreach-Object{
+                $thisRuleCollGroup = $_
+                $ruleCollGroupFile = $fwRuleCollGroupFileFormat -f $thisFwPolicy.name,$($thisruleCollGroup.name.split('/')[-1])
+                
+                #Create new files if none exist
+                If(-not($rgFiles.Name -contains $ruleCollGroupFile)){
+                    Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+                }
+                
+                $ruleCollGroupData = Get-content "$ArmFolder\$ruleCollGroupFile" | ConvertFrom-Json
+                $thisArmResource = $ruleCollGroupData.resources | Where-object {$_.name -eq $thisRuleCollGroup.name}
+                
+                #set properties
+                $thisArmResource.properties.priority = $thisRuleCollGroup.priority
+                
+                #process each rule coll and write them to arm code
+                # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
+                $thisRuleCollGroup.ruleCollections | Foreach-Object{
+                    $thisRuleColl = $_
+                    $thisArmRuleColl = $thisArmResource.properties.ruleCollections | Where-Object{$_.name -eq $thisRuleColl.name}
+                    
+                    #If no ruleCollection exists then
+                    If(-not($thisArmRuleColl)){
+                        Throw "This script can't create ruleCollections yet. Create a blank rulecoll until this is fixed. Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+                    }
+
+                    #write settings to rulecoll
+                    $thisArmRuleColl.priority = $thisRuleColl.priority
+                    $thisArmRuleColl.action = $thisRuleColl.action
+                    
+                    #read rules from csv
+                    $csvFiles = Get-ChildItem "$policyFolder/$($thisRulecollGroup.name)/$($thisRuleColl.name)"
+
+                    $theseRules = @()
+                    #set all rules
+                    $csvFiles | Foreach-object{
+                        $file = $_
+
+                        $type = $file.Name -replace '.csv',''
+                        switch($type){
+                            "ApplicationRule"{
+                                #$headers = 'name','ruleType','destinationAddresses','fqdnTags','protocols','sourceAddresses','sourceIpGroups','targetFqdns','targetUrls','terminateTLS','webCategories'
+                            }
+                            "NatRule"{
+                                #$headers = 'name','ruleType','destinationAddresses','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups','translatedAddress','translatedFqdn','translatedPort'
+                            }
+                            "NetworkRule"{
+                                #$headers = 'name','ruleType','destinationAddresses','destinationFqdns','destinationIpGroups','destinationPorts','ipProtocols','sourceAddresses','sourceIpGroups'
+                            }
+                            Default{ #Auto sorting
+                                throw "Can't process $($file.name)"
+                            }
+                        }
+                    }
+                    $thisArmruleColl.rules[0]
+
+                }
+                
+                $thisArmResource
+                $thisRuleCollGroup
+
+                $ruleCollGroupData
+
+            }
+
+        }
+        #Write settings to rulecollectiongroups
+        $ruleColls | ForEach-Object{
+            $thisColl = $_
+            
+        }
+
     }
 }
 Process{

@@ -16,7 +16,7 @@ At the heart of this project is a powershell scripts which translates between ``
 To properly use this script it is recommended to integrate it into your ci/cd pipelines. There are some examples in this repository, but feel free to change and integrate and submit a PR to this repo with more examples
 
 - [Azure DevOps Pipelines](.devops)
-- [Github Actions](.github\workflows)
+- [Github Actions](.github/workflows)
 
 ### Azure ARM templates -> HybridOps FW IaC
 
@@ -107,3 +107,7 @@ Be careful with priority when editing this, as deployment will fail if there are
 # Assumptions
  - All firewall policies configured exist in the same resource group.
  - To enable two way sync the AzOps Pull pipeline must be run before a push, otherwise it will overwrite changes made in the portal that has not been pulled in.
+
+# Features to add
+Create fwPolicies by defining them here
+
