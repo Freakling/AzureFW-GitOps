@@ -11,12 +11,11 @@ Begin{
     $PolicyFolder = 'C:\git\AzureFW-HybridOps\policies'
     #>
 
+    $delimiter = ',' # "`t"
+
     # Formats JSON in a nicer format than the built-in ConvertTo-Json does.
     # Thanks to Kody for providing this excellent function (https://stackoverflow.com/users/1754995/kody)
     # https://stackoverflow.com/questions/57329639/powershell-convert-to-json-is-bad-format/57329852#57329852
-
-    $delimiter = ',' # "`t"
-
     function Format-Json([Parameter(Mandatory, ValueFromPipeline)][String] $json) {
         $indent = 0;
         ($json -Split '\n' | foreach-object {
