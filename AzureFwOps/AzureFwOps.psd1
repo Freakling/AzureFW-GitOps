@@ -23,8 +23,6 @@
     # Author of this module
     Author = 'Vikingur Saemundsson'
 
-    LinkedIn = 'https://www.linkedin.com/in/vikingur-saemundsson/'
-    
     # Company or vendor of this module
     CompanyName = 'saemundsson.se'
     
