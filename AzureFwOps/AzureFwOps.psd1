@@ -30,7 +30,7 @@
     Copyright = '(c) 2022 Vikingur Saemundsson. All rights reserved.'
     
     # Description of the functionality provided by this module
-    Description = 'https://github.com/Freakling/Powershell-MicrosoftGraph'
+    Description = 'https://github.com/Freakling/AzureFW-HybridOps'
     
     # Minimum version of the Windows PowerShell engine required by this module
     # PowerShellVersion = '3'
