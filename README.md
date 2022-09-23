@@ -5,6 +5,11 @@ It provides a two-way sync of rules and configuration allowing hybrid IaC & Clic
 
 In short the intention is to invent a new "way of working" with Azure Firewalls which I hope is more pleasant than the current OOBE.
 
+# Module installation
+```Install-Module -Name AzureFwOps	```
+
+[https://www.powershellgallery.com/packages/AzureFwOps/](https://www.powershellgallery.com/packages/AzureFwOps/)
+
 # How it works
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
