@@ -1,0 +1,20 @@
+trigger: none
+
+variables:
+ - group: key
+
+pool:
+  vmImage: windows-latest
+
+steps:
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Copy-Item -Path .\AzureFwOps\ -Destination C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules -Recurse -Force
+      
+      Import-Module AzureFwOps
+      Get-Module AzureFwOps | Select *
+      
+      Publish-Module -NuGetApiKey $(value) -Name AzureFwOps
