@@ -70,22 +70,18 @@ The above command reads settings from ``PolicyFolder`` and writes to AzOps resou
 Headers follow ``FirewallPolicyRule`` objects, [more info in the docs](https://docs.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template#firewallpolicyrule-objects-1).
  At the time of writing AzOps performs a pull using apiVersion "2020-11-01". If the apiVersion adds a type it will automatically get included, albeit unsorted.
 
-### ``ApplicationRule.csv``
-```
-name,ruleType,destinationAddresses,fqdnTags,protocols,sourceAddresses,sourceIpGroups,targetFqdns,targetUrls,terminateTLS,webCategories
-```
-#### Example
-### ``NetworkRule.csv``
-```
-name,ruleType,destinationAddresses,destinationFqdns,destinationIpGroups,destinationPorts,ipProtocols,sourceAddresses,sourceIpGroups
-```
-#### Example
-### ``NatRule.csv``
-```
-name,ruleType,destinationAddresses,destinationPorts,ipProtocols,sourceAddresses,sourceIpGroups,translatedAddress,translatedFqdn,translatedPort
-```
-#### Example
-### ``policySettings.json``
+### Examples
+[policySettings.json](/policies/policySettings.json)
+
+[ApplicationRule.csv](/policies/fwpolicy/rulecollgroup/app-rulecoll/ApplicationRule.csv)
+
+[NetworkRule.csv](/policies/fwpolicy/rulecollgroup/net-rulecoll/NetworkRule.csv)
+
+[NatRule.csv](/policies/fwpolicy/rulecollgroup/net-rulecoll/NatRule.csv)
+
+
+
+### policySettings
 ``policySettings.json`` provides the more static configuration where Policy configuration can be stored, example of configuration defined here is child-policies, RuleCollectionGroup priority settings etc.
 It is recommended to generate this file using the ``ConvertFrom-ArmFw`` function once the initial structure is created in Azure Portal.
 Be careful with priority when editing this, as deployment will fail if there are conflicting priorities.
