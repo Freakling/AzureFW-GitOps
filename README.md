@@ -14,13 +14,13 @@ In short the intention is to invent a new "way of working" with Azure Firewalls 
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
 
-At the heart of this project is a powershell scripts which translates between ``Azure ARM templates`` and ``HybridOps FW IaC``
+At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``HybridOps Firewall IaC``
 
-- [Convert-ArmHybridOps.ps1](.scripts/Convert-ArmHybridOps.ps1)
+- [AzureFwOps.psm1](/AzureFwOps/AzureFwOps.psm1)
 
-To properly use this script it is recommended to integrate it into your ci/cd pipelines. There are some examples in this repository, but feel free to change and integrate and submit a PR to this repo with more examples
+To properly use this module it is recommended to integrate it into your ci/cd pipelines. There are some examples in this repository, but feel free to change and integrate and submit a PR to this repo with more examples
 
-- [Azure DevOps Pipelines](.devops)
+- [Azure DevOps Pipelines](.pipelines/examples/)
 - [Github Actions](.github/workflows)
 
 ## Azure ARM templates -> HybridOps FW IaC
