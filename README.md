@@ -131,6 +131,6 @@ Be careful with priority when editing this, as deployment will fail if there are
 - Create fwPolicies by defining them here
 - pipeline integration
 - videos going step-by-step on how to implement and use
-- publish the script as a module in powershell gallery
+- ~~publish the script as a module in powershell gallery~~
 - add whatif output
 - add functionality to print rules to console (whatif, writeToArm)
