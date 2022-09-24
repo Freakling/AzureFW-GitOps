@@ -1,0 +1,6 @@
+      - template: .templates/azureFwOps.yml
+        parameters:
+          mode: WriteToCsv
+          merge: true
+          armFolder: <full path to folder containing firewall ARM templates>
+          policyFolder: <full path to folder where fw policies are stored>
