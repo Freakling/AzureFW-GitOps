@@ -1,9 +1,7 @@
-# AzureFW-HybridOps
+# AzureFW-GitOps
 
-This project intends to simplify and improve the user experience of authoring/configuring Azure Firewall Policies and rules.
-It provides a two-way sync of rules and configuration allowing hybrid IaC & ClickOps Azure FW policy authoring.
-
-In short the intention is to invent a new "way of working" with Azure Firewalls which I hope is more pleasant than the current OOBE.
+This project intends to provide a GitOps experience for Azure Firewall. The goal is to simplify and improve the user experience of authoring/configuring Azure Firewall Policies and rules.
+AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing GitOps IaC & ClickOps Azure FW policy authoring.
 
 # Module installation
 ```Install-Module -Name AzureFwOps	```
@@ -14,7 +12,7 @@ In short the intention is to invent a new "way of working" with Azure Firewalls 
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
 
-At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``HybridOps Firewall IaC``
+At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``GitOps Firewall IaC``
 
 - [AzureFwOps.psm1](/AzureFwOps/AzureFwOps.psm1)
 
@@ -23,7 +21,7 @@ To properly use this module it is recommended to integrate it into your ci/cd pi
 - [Azure DevOps Pipelines](.pipelines/examples/)
 - [Github Actions](.github/workflows)
 
-## Azure ARM templates -> HybridOps FW IaC
+## Azure ARM templates -> GitOps FW IaC
 
 ```
 ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder -Merge
@@ -32,11 +30,11 @@ The above command reads ARM templates for ``Microsoft.Network/firewallPolicies``
 
 ``$ArmFolder`` is the AzOps resource group folder where Firewall resides.
 
-``$PolicyFolder`` is the folder where you intend to place the HybridOps content.
+``$PolicyFolder`` is the folder where you intend to place the GitOps content.
 
 The switch parameter ``-Merge`` specifies that updates from ARM is merged with any rules written in rule files. This is only recommended if hybrid authoring mode is preferred. For immutable mode is preferred ``-Merge`` should be avoided. 
 
-## HybridOps FW IaC -> Azure ARM templates
+## GitOps FW IaC -> Azure ARM templates
 ```
 ConvertTo-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
 ```
@@ -51,7 +49,7 @@ The above command reads settings from ``PolicyFolder`` and writes to AzOps resou
  ┗ ...
 ```
 
-## Firewall HybridOps file structure
+## Firewall GitOps file structure
 ```
 📦policies
  ┣ 📂<policyName>

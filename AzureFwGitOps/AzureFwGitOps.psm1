@@ -155,7 +155,7 @@ Param(
         #Write fwPolicy files
         #Create new files if none exist
         If(-not($rgFiles.Name -contains $fwPolicyFile)){
-            Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+            Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
         }
         #$fwPolicyData = Get-content "$ArmFolder\$fwPolicyFile" | ConvertFrom-Json
         #LETS DO THIS LATER
@@ -167,7 +167,7 @@ Param(
             
             #Create new files if none exist
             If(-not($rgFiles.Name -contains $ruleCollGroupFile)){
-                Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+                Throw "This script can't handle creation of new ARM files yet! Please create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
             }
             
             $ruleCollGroupData = Get-content "$ArmFolder\$ruleCollGroupFile" | ConvertFrom-Json
@@ -184,7 +184,7 @@ Param(
                 
                 #If no ruleCollection exists then
                 If(-not($thisArmRuleColl)){
-                    Throw "This script can't create ruleCollections yet. Create a blank rulecoll until this is fixed. Please create a PR on https://github.com/Freakling/AzureFW-HybridOps to fix this."
+                    Throw "This script can't create ruleCollections yet. Create a blank rulecoll until this is fixed. Please create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
                 }
 
                 #write settings to rulecoll

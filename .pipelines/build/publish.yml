@@ -12,9 +12,9 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      Copy-Item -Path .\AzureFwOps\ -Destination C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules -Recurse -Force
+      Copy-Item -Path .\AzureFwGitOps\ -Destination C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules -Recurse -Force
       
-      Import-Module AzureFwOps
-      Get-Module AzureFwOps | Select *
+      Import-Module AzureFwGitOps
+      Get-Module AzureFwGitOps | Select *
       
-      Publish-Module -NuGetApiKey $(value) -Name AzureFwOps
+      Publish-Module -NuGetApiKey $(value) -Name AzureFwGitOps
