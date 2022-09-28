@@ -23,7 +23,8 @@ Param(
     $ArmFolder,
     $PolicyFolder,
     [switch]$Merge,
-    $Delimiter = ','
+    $Delimiter = ',',
+    $Changes
 )
     #Extract all resources from ARM files
     $resources = @()
@@ -129,7 +130,15 @@ Param(
                 $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append -Force
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
-                    $mergedContent | Out-File $thisCsvFile -Force
+                    $mergedContent | Where-object{$_.Trim()} | Out-File $thisCsvFile -Force
+                }
+                If($Changes){
+                    $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
+                    $headers -join $Delimiter | Out-File "$env:TEMP/removed.csv" -Force
+                    $theseChanges.removedRows | Out-File "$env:TEMP/removed.csv" -Append
+                    $removedRules = Import-csv "$env:TEMP/removed.csv" -Delimiter $Delimiter
+                    $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter | Where-object{$removedRules.name -notcontains $_.name}
+                    $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -force
                 }
             }
         }

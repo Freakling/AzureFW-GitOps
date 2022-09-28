@@ -72,6 +72,18 @@ variables:
 
   - name: policyFolder
     value: "policies"
+  
+  - name: firewallFolder
+    value: "<path to your folder which contains firewall arm templates>"
+  
+  #
+  # Change this to true/false based on if you're running hybrid mode
+  # Hybrid mode writes rules based on arm templates
+  # If repo is master and changes made elsewhere is not wanted, set to false
+  # It is recommended to run hybrid mode during the first run to create a policy filestructure and pull existing config into repo
+  #
+  - name: hybrid
+    value: true
   #
   # Branch Name
   # As part of the Pull workflow we check a temporary branch
@@ -83,7 +95,7 @@ variables:
   #
 
   - name: branch
-    value: "automated"
+    value: "azureFwGitOps_automated"
 
   #
   # Commit Message
@@ -159,14 +171,16 @@ jobs:
       #
       # AzureFwGitOps
       # Read Azure Firewall policies and generate Azure Firewall GitOps data
+      # Only include this if you're using hybrid mode, 
       #
 
       - template: .templates/azureFwGitOps.yml
+        condition: eq(variables['hybrid'], 'true')
         parameters:
           mode: "WriteToCsv"
           merge: true
-          armFolder: "$(folder)/frk4-avanade (4d0765d1-ab75-4420-b750-2fafe654e5a9)/firewall"
-          policyFolder: "policies"
+          armFolder: "$(folder)/$(firewallFolder)"
+          policyFolder: $(policyFolder)
 
       #
       # AzureFwGitOps
@@ -189,7 +203,7 @@ jobs:
         inputs:
           targetType: "inline"
           script: |
-            STATUS=$(git status --short $(policyFolder))
+            STATUS=$(git status --short */**)
             echo $STATUS
             if [ -z "$STATUS" ]
             then
@@ -209,9 +223,8 @@ jobs:
         inputs:
           targetType: "inline"
           script: |
-            git add ./$(policyFolder)
-
-
+            git add .
+            
       #
       # Commit
       # Record changes to the repository
@@ -242,7 +255,7 @@ jobs:
       #
       # Merge
       # Update remote refs along with associated objects
-      #
+      #F
 
       - task: Bash@3
         displayName: "Merge"

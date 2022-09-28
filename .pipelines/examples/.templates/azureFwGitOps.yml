@@ -74,9 +74,12 @@ steps:
           $params.RequiredVersion = '$(AZFWGITOPS_MODULE_VERSION)'
         }
         Save-Module @params
-
+  
   - task: PowerShell@2
-    displayName: "GitOps AzureFw"
+    ${{ if not(eq(parameters.mode, 'WriteToCsv')) }}:
+      displayName: "ArmToCsv"
+    ${{ else }}:
+      displayName: "CsvToArm"
     inputs:
       targetType: "inline"
       script: |
@@ -89,14 +92,67 @@ steps:
           New-Item '${{parameters.policyFolder}}' -ItemType "directory" -Force | Out-null
           $policyFolder = Get-Item '${{parameters.policyFolder}}' | Select -ExpandProperty FullName
         }
+
+        # Find removed or changed rules
+        $gitDiff = git diff --name-status HEAD^ HEAD
+        
+        if($null -ne $gitDiff) {
+          If($gitDiff.GetType().Name -eq 'String'){
+            If($gitDiff.EndsWith('.csv') -and $gitDiff.StartsWith('${{parameters.policyFolder}}')){
+              [array]$csvFiles = ($gitDiff)
+            }
+            $settingsUpdated = If($gitDiff.EndsWith('.json')){$true}Else{$false}
+          }
+          Else{
+            $csvFiles = $gitDiff | Where-object{$_.EndsWith('.csv') -and $_.StartsWith('${{parameters.policyFolder}}')}
+            $settingsUpdated = If(($gitDiff | Where-object{$_.EndsWith('.json')})){$true}Else{$false}
+          }
+          If(($csvFiles -or $settingsUpdated)){
+            [array]$changes = $csvFiles | Foreach-Object{
+              $change = $_
+              $operation, $filename = ($change -split "`t")[0, -1]
+              if ($operation -eq 'D') {
+                Write-Warning 'This pipeline is currently not able to handle delete operations, $change'
+              }
+              if ($operation -in 'M', 'R') {
+                # Now we need to see if rules are removed
+                [array]$removedRows = (git show HEAD^:$filename) | Where {(git show HEAD:$filename) -NotContains $_}
+                [array]$addedRows = (git show HEAD:$filename) | Where {(git show HEAD^:$filename) -NotContains $_}
+                [pscustomobject]@{
+                  file = $filename
+                  removedRows = $removedRows
+                  addedRows = $addedRows
+                }
+              }
+            }
+          }
+          Else{
+            Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
+            exit 1
+          }
+        }
+        else {
+            Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
+            exit 1
+        }
+
         $Merge = ('${{parameters.merge}}' -eq 'true')
 
         $Env:PSModulePath = $Env:PSModulePath, '$(modulesFolder)' -join [IO.Path]::PathSeparator
         import-module AzureFwGitOps
         
+        $params = @{
+          ArmFolder = $armFolder
+          PolicyFolder = $policyFolder
+        }
+
         If('${{parameters.mode}}' -eq 'WriteToCsv'){
-          ConvertFrom-ArmFw -ArmFolder $armFolder -PolicyFolder $policyFolder -merge:$Merge -verbose
+          If($merge){
+            #Include changeset
+            $params.add('changes',$changes)
+          }
+          ConvertFrom-ArmFw @params -merge:$Merge -Verbose
         }
         Else{
-          ConvertTo-ArmFw -ArmFolder $armFolder -PolicyFolder $policyFolder -verbose
+          ConvertTo-ArmFw @params $policyFolder -Verbose
         }
