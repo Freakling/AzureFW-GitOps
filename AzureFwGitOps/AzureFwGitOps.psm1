@@ -122,7 +122,7 @@ Param(
                     }
                 }
                 #Create headers if merge is false or if the file is new
-                If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf)) -ne $headers){
+                If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf))){
                     $headers -join $Delimiter | Out-File $thisCsvFile
                 }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
