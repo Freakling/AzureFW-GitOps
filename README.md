@@ -4,17 +4,17 @@ This project intends to provide a GitOps experience for Azure Firewall. The goal
 AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing GitOps IaC & ClickOps Azure FW policy authoring.
 
 # Module installation
-```Install-Module -Name AzureFwOps	```
+```Install-Module -Name AzureFwGitOps	```
 
-[https://www.powershellgallery.com/packages/AzureFwOps/](https://www.powershellgallery.com/packages/AzureFwOps/)
+[https://www.powershellgallery.com/packages/AzureFwGitOps/](https://www.powershellgallery.com/packages/AzureFwGitOps/)
 
 # How it works
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
 
-At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``GitOps Firewall IaC``
+At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``GitOps IaC``
 
-- [AzureFwOps.psm1](/AzureFwOps/AzureFwOps.psm1)
+- [AzureFwGitOps.psm1](/AzureFwGitOps/AzureFwGitOps.psm1)
 
 To properly use this module it is recommended to integrate it into your ci/cd pipelines. There are some examples in this repository, but feel free to change and integrate and submit a PR to this repo with more examples
 

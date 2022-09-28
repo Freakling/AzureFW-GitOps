@@ -121,7 +121,10 @@ Param(
                         $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
                     }
                 }
-                If($Merge -eq $false){$headers -join $Delimiter | Out-File $thisCsvFile}
+                #Create headers if merge is false or if the file is new
+                If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf)) -ne $headers){
+                    $headers -join $Delimiter | Out-File $thisCsvFile
+                }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
                 $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append
                 If($Merge -eq $true){

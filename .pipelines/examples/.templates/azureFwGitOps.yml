@@ -1,0 +1,102 @@
+parameters:
+- name: mode
+  type: string
+  default: WriteToCsv
+  values:
+  - WriteToCsv
+  - WriteToArm
+
+- name: merge
+  type: boolean
+  default: false
+
+- name: armFolder
+  displayName: FirewallArmDirectory
+  type: string
+
+- name: policyFolder
+  displayName: FirewallPolicyDirectory
+  type: string
+
+steps:
+
+  #
+  # Get Latest AzureFwGitOps version
+  # Query PowerShell Gallery for the latest AzureFwGitOps version
+  # to be used as cache key if no version is specified
+  # To enforce specific version variable AZFWGITOPS_MODULE_VERSION 
+  #
+
+  - task: PowerShell@2
+    displayName: "Get Latest AzureFwGitOps version"
+    condition: eq(variables['AZFWGITOPS_MODULE_VERSION'], '')
+    inputs:
+      targetType: "inline"
+      script: |
+        $latestVersionUri = "https://www.powershellgallery.com/api/v2/FindPackagesById()?id='AzureFwGitOps'&`$filter=IsLatestVersion"
+        $latestVersionId = (Invoke-RestMethod $latestVersionUri).properties.NormalizedVersion
+        Write-Host "##vso[task.setvariable variable=AZFWGITOPS_MODULE_VERSION;]$latestVersionId"
+
+  #
+  # Cache Dependencies
+  # Cache dependencies if version has not changed
+  #
+
+  - task: Cache@2
+    displayName: Cache AzureFwGitOps module
+    condition: ne(variables['AZFWGITOPS_MODULE_VERSION'], '')
+    # This task will restore modules from cache if key is found.
+    inputs:
+      key:  '"AzureFwGitOpsModule" | "$(AZFWGITOPS_MODULE_VERSION)"'
+      path: $(modulesFolder)
+      cacheHitVar: AzureFwGitOpsModule_IsCached
+
+  #
+  # Dependencies
+  # Install required runtime modules
+  #
+
+  - task: PowerShell@2
+    displayName: "Dependencies"
+    condition: or(eq(variables['AZFWGITOPS_MODULE_VERSION'], ''), ne(variables['AzureFwGitOpsModule_IsCached'], 'true'))
+    inputs:
+      targetType: "inline"
+      script: |
+        if(-not (Test-Path -Path '$(modulesFolder)')) {
+          mkdir '$(modulesFolder)'
+        }
+        $params = @{
+          Name            = 'AzureFwGitOps'
+          Path            = '$(modulesFolder)'
+          Force           = $true
+        }
+        if('$(AZFWGITOPS_MODULE_VERSION)') {
+          $params.RequiredVersion = '$(AZFWGITOPS_MODULE_VERSION)'
+        }
+        Save-Module @params
+
+  - task: PowerShell@2
+    displayName: "GitOps AzureFw"
+    inputs:
+      targetType: "inline"
+      script: |
+        $armFolder = Get-Item '${{parameters.armFolder}}' | Select -ExpandProperty FullName
+        Try{
+          $policyFolder = Get-Item '${{parameters.policyFolder}}' | Select -ExpandProperty FullName
+        }
+        Catch{
+          #first run
+          New-Item '${{parameters.policyFolder}}' -ItemType "directory" -Force | Out-null
+          $policyFolder = Get-Item '${{parameters.policyFolder}}' | Select -ExpandProperty FullName
+        }
+        $Merge = ('${{parameters.merge}}' -eq 'true')
+
+        $Env:PSModulePath = $Env:PSModulePath, '$(modulesFolder)' -join [IO.Path]::PathSeparator
+        import-module AzureFwGitOps
+        
+        If('${{parameters.mode}}' -eq 'WriteToCsv'){
+          ConvertFrom-ArmFw -ArmFolder $armFolder -PolicyFolder $policyFolder -merge:$Merge -verbose
+        }
+        Else{
+          ConvertTo-ArmFw -ArmFolder $armFolder -PolicyFolder $policyFolder -verbose
+        }

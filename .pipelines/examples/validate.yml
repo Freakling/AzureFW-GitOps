@@ -1,4 +1,4 @@
-      - template: .templates/azureFwOps.yml
+      - template: .templates/azureFwGitOps.yml
         parameters:
           mode: WriteToCsv
           merge: true
@@ -6,7 +6,7 @@
           armFolder: <full path to folder containing firewall ARM templates>
           policyFolder: <full path to folder where fw policies are stored>
 
-      - template: .templates/azureFwOps.yml
+      - template: .templates/azureFwGitOps.yml
         parameters:
           mode: WriteToArm
           whatif: true # this does not work yet! Placeholder

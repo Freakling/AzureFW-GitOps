@@ -1,4 +1,4 @@
-      - template: .templates/azureFwOps.yml
+      - template: .templates/azureFwGitOps.yml
         parameters:
           mode: WriteToArm
           armFolder: <full path to folder containing firewall ARM templates>
