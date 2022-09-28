@@ -25,6 +25,9 @@ Param(
     [switch]$Merge,
     $delimiter = ','
 )
+    #assert that policy folder exists
+    New-Item $PolicyFolder -Path $PolicyFolder -Force | Out-null
+
     #Extract all resources from ARM files
     $resources = @()
     Get-ChildItem -LiteralPath $ArmFolder -filter *.json | Foreach-Object{
