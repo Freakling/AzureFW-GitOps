@@ -124,21 +124,21 @@ Param(
                 }
                 #Create headers if merge is false or if the file is new
                 If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf))){
-                    $headers -join $Delimiter | Out-File $thisCsvFile -Force
+                    $headers -join $Delimiter | Out-File $thisCsvFile -Force -Encoding utf8
                 }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
-                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append -Force
+                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append -Force -Encoding utf8
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
-                    $mergedContent | Where-object{$_.Trim()} | Out-File $thisCsvFile -Force
+                    $mergedContent | Where-object{$_.Trim()} | Out-File $thisCsvFile -Force -Encoding utf8
                 }
                 If($Changes){
                     $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
-                    $headers -join $Delimiter | Out-File "$env:TEMP/removed.csv" -Force
-                    $theseChanges.removedRows | Out-File "$env:TEMP/removed.csv" -Append
+                    $headers -join $Delimiter | Out-File "$env:TEMP/removed.csv" -Force -Encoding utf8
+                    $theseChanges.removedRows | Out-File "$env:TEMP/removed.csv" -Append -Encoding utf8
                     $removedRules = Import-csv "$env:TEMP/removed.csv" -Delimiter $Delimiter
                     $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter | Where-object{$removedRules.name -notcontains $_.name}
-                    $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -force
+                    $modifiedContent  | ConvertTo-Csv -NoTypeInformation -delimiter $delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -force -Encoding utf8
                 }
             }
         }
@@ -265,7 +265,7 @@ Param(
             }
 
             #write new settings to arm template
-            ($ruleCollGroupData | ConvertTo-Json -Depth 100).replace('""','') | Format-Json | Out-File "$ArmFolder\$ruleCollGroupFile"
+            ($ruleCollGroupData | ConvertTo-Json -Depth 100).replace('""','') | Format-Json | Out-File "$ArmFolder\$ruleCollGroupFile" -Encoding utf8
         }
     }
 }
