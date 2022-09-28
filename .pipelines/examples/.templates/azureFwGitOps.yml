@@ -74,7 +74,11 @@ steps:
           $params.RequiredVersion = '$(AZFWGITOPS_MODULE_VERSION)'
         }
         Save-Module @params
-  
+#
+    # Diff
+    # List index changes
+    #
+
   - task: PowerShell@2
     ${{ if not(eq(parameters.mode, 'WriteToCsv')) }}:
       displayName: "ArmToCsv"
@@ -95,19 +99,19 @@ steps:
 
         # Find removed or changed rules
         $gitDiff = git diff --name-status HEAD^ HEAD
-        
         if($null -ne $gitDiff) {
           If($gitDiff.GetType().Name -eq 'String'){
-            If($gitDiff.EndsWith('.csv') -and $gitDiff.StartsWith('${{parameters.policyFolder}}')){
+            If($gitDiff.EndsWith('.csv')){
               [array]$csvFiles = ($gitDiff)
             }
             $settingsUpdated = If($gitDiff.EndsWith('.json')){$true}Else{$false}
           }
           Else{
-            $csvFiles = $gitDiff | Where-object{$_.EndsWith('.csv') -and $_.StartsWith('${{parameters.policyFolder}}')}
+            $csvFiles = $gitDiff | Where-object{$_.EndsWith('.csv')}
             $settingsUpdated = If(($gitDiff | Where-object{$_.EndsWith('.json')})){$true}Else{$false}
           }
           If(($csvFiles -or $settingsUpdated)){
+            $csvFiles | Write-Output
             [array]$changes = $csvFiles | Foreach-Object{
               $change = $_
               $operation, $filename = ($change -split "`t")[0, -1]
@@ -116,15 +120,18 @@ steps:
               }
               if ($operation -in 'M', 'R') {
                 # Now we need to see if rules are removed
-                [array]$removedRows = (git show HEAD^:$filename) | Where {(git show HEAD:$filename) -NotContains $_}
-                [array]$addedRows = (git show HEAD:$filename) | Where {(git show HEAD^:$filename) -NotContains $_}
-                [pscustomobject]@{
-                  file = $filename
-                  removedRows = $removedRows
-                  addedRows = $addedRows
+                If($filename.StartsWith('${{parameters.policyFolder}}')){
+                  [array]$removedRows = (git show HEAD^:$filename) | Where {(git show HEAD:$filename) -NotContains $_}
+                  [array]$addedRows = (git show HEAD:$filename) | Where {(git show HEAD^:$filename) -NotContains $_}
+                  [pscustomobject]@{
+                    file = $filename
+                    removedRows = $removedRows
+                    addedRows = $addedRows
+                  }
                 }
               }
             }
+            $changes | Write-Output
           }
           Else{
             Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
