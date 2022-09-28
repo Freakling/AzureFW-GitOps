@@ -134,10 +134,11 @@ Param(
                 }
                 If($Changes){
                     $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
-                    $headers -join $Delimiter | Out-File "$env:TEMP/removed.csv" -Force -Encoding utf8
-                    $theseChanges.removedRows | Out-File "$env:TEMP/removed.csv" -Append -Encoding utf8
-                    $removedRules = Import-csv "$env:TEMP/removed.csv" -Delimiter $Delimiter
+                    $headers -join $Delimiter | Out-File "removed.csv" -Force -Encoding utf8
+                    $theseChanges.removedRows | Out-File "removed.csv" -Append -Encoding utf8
+                    $removedRules = Import-csv "removed.csv" -Delimiter $Delimiter
                     $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter | Where-object{$removedRules.name -notcontains $_.name}
+                    Remove-Item "removed.csv" -Force
                     $modifiedContent  | ConvertTo-Csv -NoTypeInformation -delimiter $delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -force -Encoding utf8
                 }
             }
