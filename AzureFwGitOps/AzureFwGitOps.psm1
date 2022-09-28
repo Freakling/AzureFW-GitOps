@@ -23,7 +23,7 @@ Param(
     $ArmFolder,
     $PolicyFolder,
     [switch]$Merge,
-    $delimiter = ','
+    $Delimiter = ','
 )
     #Extract all resources from ARM files
     $resources = @()
@@ -121,8 +121,8 @@ Param(
                         $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
                     }
                 }
-                If($Merge -eq $false){$headers -join $delimiter | Out-File $thisCsvFile}
-                $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $delimiter)`""
+                If($Merge -eq $false){$headers -join $Delimiter | Out-File $thisCsvFile}
+                $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
                 $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
@@ -139,7 +139,8 @@ Param(
     $ArmFolder,
     $PolicyFolder,
     $fwPolicyFileFormat = 'microsoft.network_firewallpolicies-{0}.json',
-    $fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json'
+    $fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json',
+    $Delimiter = ','
 )
     #Read all policy files
     $settings = Get-Item -LiteralPath "$PolicyFolder\policySettings.json" | Get-Content | ConvertFrom-Json
@@ -197,7 +198,7 @@ Param(
                 $theseRules = @()
                 #set all rules
                 $csvFiles | Foreach-object{
-                    $rules = Import-csv -LiteralPath $_.FullName -Delimiter $delimiter
+                    $rules = Import-csv -LiteralPath $_.FullName -Delimiter $Delimiter
                     #Need to make sure these are correct datatype
                     # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
                     $rules | ForEach-Object {
