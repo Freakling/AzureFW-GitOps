@@ -123,13 +123,13 @@ Param(
                 }
                 #Create headers if merge is false or if the file is new
                 If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf))){
-                    $headers -join $Delimiter | Out-File $thisCsvFile
+                    $headers -join $Delimiter | Out-File $thisCsvFile -Force
                 }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
-                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append
+                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-file $thisCsvFile -append -Force
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
-                    $mergedContent | Out-File $thisCsvFile
+                    $mergedContent | Out-File $thisCsvFile -Force
                 }
             }
         }
