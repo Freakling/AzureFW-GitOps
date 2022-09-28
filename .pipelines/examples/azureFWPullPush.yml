@@ -173,14 +173,13 @@ jobs:
       # Read Azure Firewall policies and generate Azure Firewall GitOps data
       # Only include this if you're using hybrid mode, 
       #
-
-      - template: .templates/azureFwGitOps.yml
-        condition: eq(variables['hybrid'], 'true')
-        parameters:
-          mode: "WriteToCsv"
-          merge: true
-          armFolder: "$(folder)/$(firewallFolder)"
-          policyFolder: $(policyFolder)
+      - ${{ if eq(variables['hybrid'], 'true') }}:
+        - template: .templates/azureFwGitOps.yml
+          parameters:
+            mode: "WriteToCsv"
+            merge: true
+            armFolder: "$(folder)/$(firewallFolder)"
+            policyFolder: $(policyFolder)
 
       #
       # AzureFwGitOps
