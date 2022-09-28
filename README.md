@@ -11,6 +11,9 @@ AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allo
 # How it works
 
 This project utilizes [AzOps](https://github.com/Azure/AzOps) as the IaC backend and aims to mirror the structure that AzOps creates and uses.
+There is a demo project in Azure DevOps which puts all these things into action and provides a real-world example on how everything can be put together.
+- [Pipelines (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_build?view=folders)
+- [Repository (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_git/AzOps-Accelerator)
 
 At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``GitOps IaC``
 
@@ -132,3 +135,4 @@ Be careful with priority when editing this, as deployment will fail if there are
 - ~~publish the script as a module in powershell gallery~~
 - add whatif output
 - add functionality to print rules to console (whatif, writeToArm)
+- add functionality to remove configuration, currently the pipelines are only capable of adding
