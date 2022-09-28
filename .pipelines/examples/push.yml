@@ -1,5 +1,5 @@
       - template: .templates/azureFwGitOps.yml
         parameters:
           mode: WriteToArm
-          armFolder: <full path to folder containing firewall ARM templates>
-          policyFolder: <full path to folder where fw policies are stored>
+          armFolder: <relative path to folder containing firewall ARM templates>
+          policyFolder: <relative path to folder where fw policies are stored>
