@@ -1,7 +1,7 @@
 # AzureFW-GitOps
 
-This project intends to provide a GitOps experience for Azure Firewall. The goal is to simplify and improve the user experience of authoring/configuring Azure Firewall Policies and rules.
-AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing Azure FW GitOps & ClickOps Azure FW policy authoring.
+This project intends to provide a GitOps experience for Azure Firewall in order to make Azure Firewall IaC easier and improve the overall user experience of authoring/configuring Azure Firewall Policies and rules.
+In short AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing Azure FW GitOps & ClickOps Azure FW policy authoring. You can choose yourself if you want to have the repository as single source of truth or if both Repo & Azure Portal authoring is allowed.
 
 # Module installation
 ```Install-Module -Name AzureFwGitOps	```
