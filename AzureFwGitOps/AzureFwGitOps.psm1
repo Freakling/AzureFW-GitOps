@@ -134,12 +134,14 @@ Param(
                 }
                 If($Changes){
                     $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
-                    $headers -join $Delimiter | Out-File "removed.csv" -Force -Encoding utf8
-                    $theseChanges.removedRows | Out-File "removed.csv" -Append -Encoding utf8
-                    $removedRules = Import-csv "removed.csv" -Delimiter $Delimiter
-                    $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter | Where-object{$removedRules.name -notcontains $_.name}
-                    Remove-Item "removed.csv" -Force
-                    $modifiedContent  | ConvertTo-Csv -NoTypeInformation -delimiter $delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -force -Encoding utf8
+                    If($theseChanges){
+                        $headers -join $Delimiter | Out-File "removed.csv" -Force -Encoding utf8
+                        $theseChanges.removedRows | Out-File "removed.csv" -Append -Encoding utf8
+                        $removedRules = Import-csv "removed.csv" -Delimiter $Delimiter -Encoding utf8
+                        $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter -Encoding utf8 | Where-object{$removedRules.name -notcontains $_.name}
+                        Remove-Item "removed.csv" -Force
+                        $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $Delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -Force -Encoding utf8
+                    }
                 }
             }
         }
@@ -211,7 +213,7 @@ Param(
                 $theseRules = @()
                 #set all rules
                 $csvFiles | Foreach-object{
-                    $rules = Import-csv -LiteralPath $_.FullName -Delimiter $Delimiter
+                    $rules = Import-csv -LiteralPath $_.FullName -Delimiter $Delimiter -Encoding utf8
                     #Need to make sure these are correct datatype
                     # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
                     $rules | ForEach-Object {
