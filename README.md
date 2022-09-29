@@ -15,7 +15,7 @@ There is a demo project in Azure DevOps which puts all these things into action 
 - [Pipelines (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_build?view=folders)
 - [Repository (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_git/AzOps-Accelerator)
 
-At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``Azure FW GitOps`` as well as a [pipeline](.pipelines\examples\.templates\azureFwGitOps.yml) to track and implement changes.
+At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``Azure FW GitOps`` as well as a [pipeline](.pipelines/examples/.templates/azureFwGitOps.yml) to track and implement changes.
 
 - [AzureFwGitOps.psm1](/AzureFwGitOps/AzureFwGitOps.psm1)
 
