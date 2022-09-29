@@ -79,7 +79,7 @@ Param(
         }
     }
     #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
-    $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8 -Force
+    $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
 
     #Assert folders for firewall and ruleCollGroups
     $policies | Foreach-Object {
@@ -124,23 +124,23 @@ Param(
                 }
                 #Create headers if merge is false or if the file is new
                 If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf))){
-                    $headers -join $Delimiter | Tee-Object $thisCsvFile -Force -Encoding utf8
+                    $headers -join $Delimiter | Tee-Object $thisCsvFile Encoding utf8
                 }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
-                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Tee-Object $thisCsvFile -append -Force -Encoding utf8
+                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Tee-Object $thisCsvFile -append -Encoding utf8
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
-                    $mergedContent | Where-object{$_.Trim()} | Tee-Object $thisCsvFile -Force -Encoding utf8
+                    $mergedContent | Where-object{$_.Trim()} | Tee-Object $thisCsvFile -Encoding utf8
                 }
                 If($Changes){
                     $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
                     If($theseChanges){
-                        $headers -join $Delimiter | Tee-Object "removed.csv" -Force -Encoding utf8
+                        $headers -join $Delimiter | Tee-Object "removed.csv" -Encoding utf8
                         $theseChanges.removedRows | Tee-Object "removed.csv" -Append -Encoding utf8
                         $removedRules = Import-csv "removed.csv" -Delimiter $Delimiter -Encoding utf8
                         $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter -Encoding utf8 | Where-object{$removedRules.name -notcontains $_.name}
                         Remove-Item "removed.csv" -Force
-                        $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $Delimiter | Foreach-object {$_ -replace '"',''} | Tee-Object $thisCsvFile -Force -Encoding utf8
+                        $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $Delimiter | Foreach-object {$_ -replace '"',''} | Tee-Object $thisCsvFile -Encoding utf8
                     }
                 }
             }
