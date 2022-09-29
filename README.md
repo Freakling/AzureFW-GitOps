@@ -1,7 +1,7 @@
 # AzureFW-GitOps
 
 This project intends to provide a GitOps experience for Azure Firewall. The goal is to simplify and improve the user experience of authoring/configuring Azure Firewall Policies and rules.
-AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing GitOps IaC & ClickOps Azure FW policy authoring.
+AzureFW GitOps creates a new way of configuring Azure Firewall Policies and allows for a two-way sync of rules and configuration allowing Azure FW GitOps & ClickOps Azure FW policy authoring.
 
 # Module installation
 ```Install-Module -Name AzureFwGitOps	```
@@ -15,7 +15,7 @@ There is a demo project in Azure DevOps which puts all these things into action 
 - [Pipelines (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_build?view=folders)
 - [Repository (External Azure DevOps)](https://dev.azure.com/freakling/AzureAutomation/_git/AzOps-Accelerator)
 
-At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``GitOps IaC`` as well as a [pipeline](.pipelines\examples\.templates\azureFwGitOps.yml) to track and implement changes.
+At the heart of this project is a powershell module which translates between ``Azure ARM templates`` and ``Azure FW GitOps`` as well as a [pipeline](.pipelines\examples\.templates\azureFwGitOps.yml) to track and implement changes.
 
 - [AzureFwGitOps.psm1](/AzureFwGitOps/AzureFwGitOps.psm1)
 
@@ -24,7 +24,7 @@ To properly use this module it is recommended to integrate it into your ci/cd pi
 - [Azure DevOps Pipelines](.pipelines/examples/)
 - [Github Actions](.github/workflows)
 
-## Azure ARM templates -> GitOps FW IaC
+## Azure ARM templates -> Azure FW GitOps
 
 ```
 ConvertFrom-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder -Merge
@@ -37,7 +37,7 @@ The above command reads ARM templates for ``Microsoft.Network/firewallPolicies``
 
 The switch parameter ``-Merge`` specifies that updates from ARM is merged with any rules written in rule files. This is only recommended if hybrid authoring mode is preferred. For immutable mode is preferred ``-Merge`` should be avoided. 
 
-## GitOps FW IaC -> Azure ARM templates
+## Azure FW GitOps -> Azure ARM templates
 ```
 ConvertTo-ArmFw -ArmFolder $ArmFolder -PolicyFolder $PolicyFolder
 ```
@@ -125,7 +125,7 @@ Be careful with priority when editing this, as deployment will fail if there are
 # Assumptions
  - All firewall policies configured exist in the same resource group.
  - To enable two way sync the AzOps Pull pipeline must be run before a push, otherwise it will overwrite changes made in the portal that has not been pulled in.
- - The delimiter should to be ',' This is configurable in the script by setting the var $delimiter in the begin block. space (' ') and semicolon (';') is reserved
+ - The delimiter should to be ',' This is configurable in the script by parameters (-Delimiter). space (' ') and semicolon (';') is reserved and should not be used.
 
 # TODO
 - Update so that the script can write to fwPolicy files. Currently it cannot associate child fw policies or rulecollectiongroups
