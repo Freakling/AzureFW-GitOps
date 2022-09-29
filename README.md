@@ -130,9 +130,10 @@ Be careful with priority when editing this, as deployment will fail if there are
 # TODO
 - Update so that the script can write to fwPolicy files. Currently it cannot associate child fw policies or rulecollectiongroups
 - Create fwPolicies by defining them here
-- pipeline integration
+- ~~pipeline integration~~
 - videos going step-by-step on how to implement and use
 - ~~publish the script as a module in powershell gallery~~
 - add whatif output
-- add functionality to print rules to console (whatif, writeToArm)
-- add functionality to remove configuration, currently the pipelines are only capable of adding
+- ~~add functionality to print rules to console (whatif, writeToArm)~~
+  - validate should only write result and not deploy
+- ~~add functionality to remove configuration, currently the pipelines are only capable of adding~~
