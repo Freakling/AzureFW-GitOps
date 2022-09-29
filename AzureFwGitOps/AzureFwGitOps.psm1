@@ -169,7 +169,7 @@ Param(
         #Write fwPolicy files
         #Create new files if none exist
         If(-not($rgFiles.Name -contains $fwPolicyFile)){
-            Throw "This script can't handle creation of new ARM files for Azure Firewall policies (yet)! Please create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
+            Throw "$($thisFwPolicy.name) does not match any ARM template.`r`nThis script can't handle creation of new ARM files for Azure Firewall policies (yet).`r`nPlease create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
         }
         #$fwPolicyData = Get-content "$ArmFolder\$fwPolicyFile" | ConvertFrom-Json
         #LETS DO THIS LATER
@@ -181,7 +181,7 @@ Param(
             
             #Create new files if none exist
             If(-not($rgFiles.Name -contains $ruleCollGroupFile)){
-                Throw "This script can't handle creation of new ARM files for Azure FirewallPolicy RuleCollections (yet)! Please create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
+                Throw "$($thisRuleCollGroup.name) does not match any ARM template.`r`nThis script can't handle creation of new ARM files for Azure FirewallPolicy RuleCollections (yet).`r`nPlease create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
             }
             
             $ruleCollGroupData = Get-content "$ArmFolder\$ruleCollGroupFile" | ConvertFrom-Json

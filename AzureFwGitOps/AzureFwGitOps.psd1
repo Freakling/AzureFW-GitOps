@@ -12,7 +12,7 @@
     RootModule = 'AzureFwGitOps.psm1'
     
     # Version number of this module.
-    ModuleVersion = '0.11'
+    ModuleVersion = '0.12'
     
     # Supported PSEditions
     # CompatiblePSEditions = @()
