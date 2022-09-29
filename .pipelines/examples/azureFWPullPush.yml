@@ -44,7 +44,17 @@ schedules:
 #          include:
 #            - main
 
-
+parameters:
+  #
+  # Change this to true/false based on if you're running hybrid mode
+  # Hybrid mode writes rules based on arm templates
+  # If repo is master and changes made elsewhere is not wanted, set to false
+  # It is recommended to run hybrid mode during the first run to create a policy filestructure and pull existing config into repo
+  #
+  - name: hybrid
+    displayName: Run pipeline in hybrid mode (read from ARM templates).
+    type: boolean
+    default: true
 
 variables:
   
@@ -76,14 +86,6 @@ variables:
   - name: firewallFolder
     value: "<path to your folder which contains firewall arm templates>"
   
-  #
-  # Change this to true/false based on if you're running hybrid mode
-  # Hybrid mode writes rules based on arm templates
-  # If repo is master and changes made elsewhere is not wanted, set to false
-  # It is recommended to run hybrid mode during the first run to create a policy filestructure and pull existing config into repo
-  #
-  - name: hybrid
-    value: true
   #
   # Branch Name
   # As part of the Pull workflow we check a temporary branch
@@ -173,7 +175,7 @@ jobs:
       # Read Azure Firewall policies and generate Azure Firewall GitOps data
       # Only include this if you're using hybrid mode, 
       #
-      - ${{ if eq(variables['hybrid'], 'true') }}:
+      - ${{ if eq(parameters['hybrid'], 'true') }}:
         - template: .templates/azureFwGitOps.yml
           parameters:
             mode: "WriteToCsv"

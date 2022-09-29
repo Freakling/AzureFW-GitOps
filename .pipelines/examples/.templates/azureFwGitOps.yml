@@ -81,9 +81,9 @@ steps:
 
   - task: PowerShell@2
     ${{ if not(eq(parameters.mode, 'WriteToCsv')) }}:
-      displayName: "ArmToCsv"
+      displayName: "ConvertTo-ArmFw"
     ${{ else }}:
-      displayName: "CsvToArm"
+      displayName: "ConvertFrom-ArmFw"
     inputs:
       targetType: "inline"
       script: |
