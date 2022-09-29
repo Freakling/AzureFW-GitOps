@@ -22,7 +22,7 @@ At the heart of this project is a powershell module which translates between ``A
 To properly use this module it is recommended to integrate it into your ci/cd pipelines. There are some examples in this repository, but feel free to change and integrate and submit a PR to this repo with more examples
 
 - [Azure DevOps Pipelines](.pipelines/examples/)
-- [Github Actions](.github/workflows)
+- [Github Actions](.github/workflows) (not yet built)
 
 ## Azure ARM templates -> Azure FW GitOps
 
