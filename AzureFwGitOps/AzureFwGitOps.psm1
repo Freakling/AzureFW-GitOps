@@ -133,7 +133,7 @@ Param(
                     $mergedContent | Where-object{$_.Trim()} | Tee-Object $thisCsvFile -Encoding utf8
                 }
                 If($Changes){
-                    $theseChanges = $Changes | Where-object {$_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
+                    $theseChanges = $Changes | Where-object {$_.type -eq 'rule' -and $_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
                     If($theseChanges){
                         $headers -join $Delimiter | Tee-Object "removed.csv" -Encoding utf8
                         $theseChanges.removedRows | Tee-Object "removed.csv" -Append -Encoding utf8
@@ -155,6 +155,7 @@ Param(
     $PolicyFolder,
     $fwPolicyFileFormat = 'microsoft.network_firewallpolicies-{0}.json',
     $fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json',
+    $Changes,
     $Delimiter = ','
 )
     #Read all policy files
@@ -173,11 +174,10 @@ Param(
         If(-not($rgFiles.Name -contains $fwPolicyFile)){
             Throw "$($thisFwPolicy.name) does not match any ARM template.`r`nThis script can't handle creation of new ARM files for Azure Firewall policies (yet).`r`nPlease create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
         }
-        #$fwPolicyData = Get-content "$ArmFolder\$fwPolicyFile" | ConvertFrom-Json
-        #LETS DO THIS LATER
+        
 
-        #Write csv files
-        $thisFwPolicy.ruleCollectionGroups | Where-Object {$_} | Foreach-Object{
+        #Write settings and rules files
+        $thisFwPolicy.ruleCollectionGroups | Foreach-Object{
             $thisRuleCollGroup = $_
             $ruleCollGroupFile = $fwRuleCollGroupFileFormat -f $thisFwPolicy.name,$($thisruleCollGroup.name.split('/')[-1])
             
@@ -189,8 +189,14 @@ Param(
             $ruleCollGroupData = Get-content "$ArmFolder\$ruleCollGroupFile" | ConvertFrom-Json
             $thisArmResource = $ruleCollGroupData.resources | Where-object {$_.name -eq $thisRuleCollGroup.name}
             
-            #set properties
-            $thisArmResource.properties.priority = $thisRuleCollGroup.priority
+            #set rule coll group priority
+            If($changes | Where-Object {$_.type -eq 'settings'}){
+                $thisArmResource.properties.priority = (($changes.innerData | Where-Object{$_.name -eq $thisFwPolicy.name}).ruleCollectionGroups | Where-object{$_.name -eq $thisRuleCollGroup.name}).priority
+            }
+            else {
+                $thisArmResource.properties.priority = $thisRuleCollGroup.priority
+            }
+            
             
             #process each rule coll and write them to arm code
             # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
@@ -204,9 +210,15 @@ Param(
                 }
 
                 #write settings to rulecoll
-                $thisArmRuleColl.priority = $thisRuleColl.priority
-                $thisArmRuleColl.action = $thisRuleColl.action
-                
+                If($changes | Where-Object {$_.type -eq 'settings'}){
+                    $thisArmRuleColl.priority = ((($changes.innerData | Where-Object{$_.name -eq $thisFwPolicy.name}).ruleCollectionGroups | Where-object{$_.name -eq $thisRuleCollGroup.name}).ruleCollections | Where-object{$_.name -eq $thisRuleColl.name}).priority
+                    $thisArmRuleColl.action = ((($changes.innerData | Where-Object{$_.name -eq $thisFwPolicy.name}).ruleCollectionGroups | Where-object{$_.name -eq $thisRuleCollGroup.name}).ruleCollections | Where-object{$_.name -eq $thisRuleColl.name}).action
+                }
+                else {
+                    $thisArmRuleColl.priority = $thisRuleColl.priority
+                    $thisArmRuleColl.action = $thisRuleColl.action    
+                }
+
                 #read rules from csv
                 $csvFiles = Get-ChildItem "$policyFolder/$($thisRulecollGroup.name)/$($thisRuleColl.name)"
 
