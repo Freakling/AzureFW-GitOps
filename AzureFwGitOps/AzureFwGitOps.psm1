@@ -78,6 +78,17 @@ Param(
             $thisPolicy.ruleCollectionGroups = $object
         }
     }
+
+    $policies = $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups
+
+    #Compare if changes in policySettings.json to avoid overwriting settings
+    #If($changes | where-object{$_.type -eq 'settings'}){
+    #    Compare-Object (($policies  | ConvertTo-Json  -depth 10) -split '\r?\n') (($changes.innerData | ConvertTo-Json -depth 10) -split '\r?\n')
+    #    
+    #    Compare-Object 
+    #
+    #}
+
     #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
     $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
 
