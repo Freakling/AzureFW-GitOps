@@ -51,7 +51,13 @@
     # ProcessorArchitecture = ''
     
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules = @(JsonUtils)
+    RequiredModules = @(
+        @{
+            ModuleName = 'JsonUtils'
+            ModuleVersion = '0.4.0' 
+            Guid = 'e46e3c15-4104-48dd-94c7-99dd387cfe72'
+        }
+    )
     
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
