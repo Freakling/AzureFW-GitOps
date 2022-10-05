@@ -12,7 +12,7 @@
     RootModule = 'AzureFwGitOps.psm1'
     
     # Version number of this module.
-    ModuleVersion = '0.17'
+    ModuleVersion = '0.18'
     
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -51,13 +51,7 @@
     # ProcessorArchitecture = ''
     
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules = @(
-        @{
-            ModuleName = 'JsonUtils'
-            ModuleVersion = '0.4.0' 
-            Guid = 'e46e3c15-4104-48dd-94c7-99dd387cfe72'
-        }
-    )
+    # RequiredModules = @()
     
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()

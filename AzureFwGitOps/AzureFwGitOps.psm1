@@ -20,11 +20,18 @@ function Format-Json([Parameter(Mandatory, ValueFromPipeline)][String] $json) {
 Function ConvertFrom-ArmFw {
 [cmdletbinding()]
 Param(
-    $ArmFolder,
-    $PolicyFolder,
+    [parameter(Mandatory)]
+    [string]$ArmFolder,
+
+    [parameter(Mandatory)]
+    [string]$PolicyFolder,
+    
     [switch]$Merge,
-    $Delimiter = ',',
-    $Changes
+
+    [pscustomobject]$Changes,
+
+    [ValidateSet('  ',',')]
+    [char]$Delimiter = ','
 )
     #Extract all resources from ARM files
     $resources = @()
@@ -81,16 +88,17 @@ Param(
 
     $policies = $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups
 
-    #Compare if changes in policySettings.json to avoid overwriting settings
-    #If($changes | where-object{$_.type -eq 'settings'}){
-    #    Compare-Object (($policies  | ConvertTo-Json  -depth 10) -split '\r?\n') (($changes.innerData | ConvertTo-Json -depth 10) -split '\r?\n')
-    #    
-    #    Compare-Object 
-    #
-    #}
-
-    #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
-    $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+    If($Changes | where-object{$_.type -eq 'settings'}){
+        # If changes are made to settings file, we do not want to overwrite these settings
+        # in the future, we might want to do a diff and assert that updated configuration stays
+        # but right now we just output a warning message
+        Write-Warning "Changes are made in the policySettings.json file, changes pulled from ARM templates will be overwritten.`r`nIf changes made in ARM templates does not reflect output below or is incomplete, please run ConvertFrom-ArmFw again without changes once before running with included changes.`r`n`r`npolicySettings.json content:"
+        $Changes.innerData | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+    }
+    Else{
+        #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
+        $policies | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+    }
 
     #Assert folders for firewall and ruleCollGroups
     $policies | Foreach-Object {
@@ -162,12 +170,21 @@ Param(
 Function ConvertTo-ArmFw {
 [cmdletbinding()]
 Param(
-    $ArmFolder,
-    $PolicyFolder,
-    $fwPolicyFileFormat = 'microsoft.network_firewallpolicies-{0}.json',
-    $fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json',
-    $Changes,
-    $Delimiter = ','
+    [parameter(Mandatory)]
+    [string]$ArmFolder,
+
+    [parameter(Mandatory)]
+    [string]$PolicyFolder,
+
+    [string]$fwPolicyFileFormat = 'microsoft.network_firewallpolicies-{0}.json',
+
+    [string]$fwRuleCollGroupFileFormat = 'microsoft.network_firewallpolicies_rulecollectiongroups-{0}_{1}.json',
+
+    [pscustomobject]$Changes,
+    
+    [parameter(Mandatory=$false)]
+    [ValidateSet('  ',',')]
+    [char]$Delimiter = ','
 )
     #Read all policy files
     $settings = Get-Item -LiteralPath "$PolicyFolder\policySettings.json" | Get-Content | ConvertFrom-Json
@@ -185,7 +202,6 @@ Param(
         If(-not($rgFiles.Name -contains $fwPolicyFile)){
             Throw "$($thisFwPolicy.name) does not match any ARM template.`r`nThis script can't handle creation of new ARM files for Azure Firewall policies (yet).`r`nPlease create a PR on https://github.com/Freakling/AzureFW-GitOps to fix this."
         }
-        
 
         #Write settings and rules files
         $thisFwPolicy.ruleCollectionGroups | Foreach-Object{
@@ -208,9 +224,7 @@ Param(
                 $thisArmResource.properties.priority = $thisRuleCollGroup.priority
             }
             
-            
             #process each rule coll and write them to arm code
-            # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
             $thisRuleCollGroup.ruleCollections | Foreach-Object{
                 $thisRuleColl = $_
                 $thisArmRuleColl = $thisArmResource.properties.ruleCollections | Where-Object{$_.name -eq $thisRuleColl.name}
@@ -237,7 +251,7 @@ Param(
                 #set all rules
                 $csvFiles | Foreach-object{
                     $rules = Import-csv -LiteralPath $_.FullName -Delimiter $Delimiter -Encoding utf8
-                    #Need to make sure these are correct datatype
+                    # Need to make sure object members are correct. Currently ApplicationRule, NetworkRule and NatRule are supported
                     # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
                     $rules | ForEach-Object {
                         $rule = $_
