@@ -93,7 +93,7 @@ Param(
         # in the future, we might want to do a diff and assert that updated configuration stays
         # but right now we just output a warning message
         Write-Warning "Changes are made in the policySettings.json file, changes pulled from ARM templates will be overwritten.`r`nIf changes made in ARM templates does not reflect output below or is incomplete, please run ConvertFrom-ArmFw again without changes once before running with included changes.`r`n`r`npolicySettings.json content:"
-        $Changes.innerData | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+        $Changes.innerData | Where-Object{$_} | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
     }
     Else{
         #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
