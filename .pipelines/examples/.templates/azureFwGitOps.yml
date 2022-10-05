@@ -74,10 +74,10 @@ steps:
           $params.RequiredVersion = '$(AZFWGITOPS_MODULE_VERSION)'
         }
         Save-Module @params
-#
-    # Diff
-    # List index changes
-    #
+  #
+  # Diff
+  # Run Azure Fw GitOps
+  #
 
   - task: PowerShell@2
     ${{ if not(eq(parameters.mode, 'WriteToCsv')) }}:
@@ -96,10 +96,11 @@ steps:
           New-Item '${{parameters.policyFolder}}' -ItemType "directory" -Force | Out-null
           $policyFolder = Get-Item '${{parameters.policyFolder}}' | Select -ExpandProperty FullName
         }
+        $Merge = ('${{parameters.merge}}' -eq 'true')
 
         # Find removed or changed rules
         $gitDiff = git diff --name-status HEAD^ HEAD
-        if($null -ne $gitDiff) {
+        if($null -ne $gitDiff -and $merge -eq $true) {
           If($gitDiff.GetType().Name -eq 'String'){
             If($gitDiff.EndsWith('.csv')){
               [array]$csvFiles = ($gitDiff)
@@ -110,9 +111,10 @@ steps:
             $csvFiles = $gitDiff | Where-object{$_.EndsWith('.csv')}
             $settingsUpdated = If(($gitDiff | Where-object{$_.EndsWith('.json')})){$true}Else{$false}
           }
-          If(($csvFiles -or $settingsUpdated)){
+          If(($csvFiles -or $settingsUpdated)){$changes = @()}
+          If($csvFiles){
             $csvFiles | Write-Output
-            [array]$changes = $csvFiles | Foreach-Object{
+            $csvFiles | Foreach-Object{
               $change = $_
               $operation, $filename = ($change -split "`t")[0, -1]
               if ($operation -eq 'D') {
@@ -123,7 +125,8 @@ steps:
                 If($filename.StartsWith('${{parameters.policyFolder}}')){
                   [array]$removedRows = (git show HEAD^:$filename) | Where {(git show HEAD:$filename) -NotContains $_}
                   [array]$addedRows = (git show HEAD:$filename) | Where {(git show HEAD^:$filename) -NotContains $_}
-                  [pscustomobject]@{
+                  $changes += [pscustomobject]@{
+                    type = 'rule'
                     file = $filename
                     removedRows = $removedRows
                     addedRows = $addedRows
@@ -131,7 +134,15 @@ steps:
                 }
               }
             }
-            $changes | Write-Output
+          }
+          If($settingsUpdated){
+            $changes += [pscustomobject]@{
+              type = 'settings'
+              innerData = ((git show HEAD:${{parameters.policyFolder}}/policySettings.json) | ConvertFrom-Json)
+            }
+          }
+          If($changes){
+            $changes | ConvertTo-Json -depth 100 | Write-Output
           }
           Else{
             Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
@@ -142,8 +153,6 @@ steps:
             Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
             exit 1
         }
-
-        $Merge = ('${{parameters.merge}}' -eq 'true')
 
         $Env:PSModulePath = $Env:PSModulePath, '$(modulesFolder)' -join [IO.Path]::PathSeparator
         import-module AzureFwGitOps
@@ -161,5 +170,9 @@ steps:
           ConvertFrom-ArmFw @params -merge:$Merge -Verbose
         }
         Else{
+          If($changes | where-object{$_.type -eq 'settings'}){
+            #include changes if settings exist. This is really only relevant if merge is also a thing
+            $params.add('changes',$changes)
+          }
           ConvertTo-ArmFw @params -Verbose
         }

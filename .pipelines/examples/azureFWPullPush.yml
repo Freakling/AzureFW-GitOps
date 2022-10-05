@@ -22,12 +22,12 @@ trigger:
 # Default: Every 6 hours
 #
 
-schedules:
-  - cron: "0 */6 * * *"
-    branches:
-      include:
-        - main
-    always: true
+#schedules:
+#  - cron: "0 */6 * * *"
+#    branches:
+#      include:
+#        - main
+#    always: true
 
 #
 # Pipelines
@@ -92,8 +92,9 @@ variables:
   # this branch was previously know as system, this value can
   # be changed if this name is already reserved for other systems
   # within the repository.
+  # Update condition on job if this is changed.
   #
-  # Default: automated
+  # Default: azureFwGitOps_automated
   #
 
   - name: branch
@@ -105,7 +106,7 @@ variables:
   # temporary branch, the message which is applied within the
   # Git history can be changed as needed.
   #
-  # Default: Automated commit
+  # Default: AzureFW Automated commit
   #
 
   - name: commit_message
@@ -124,8 +125,13 @@ variables:
     value: "AzureFw Automated State"
 
 jobs:
+  
+  #
+  # Prevent triggering on self, if branch name is changed change condition match
+  #
 
   - job: pull
+    condition: not(contains(variables['Build.SourceVersionMessage'], 'from azureFwGitOps_automated into main'))
 
     #
     # Pull
@@ -191,7 +197,8 @@ jobs:
       - template: .templates/azureFwGitOps.yml
         parameters:
           mode: "WriteToArm"
-          armFolder: "$(folder)/frk4-avanade (4d0765d1-ab75-4420-b750-2fafe654e5a9)/firewall"
+          merge: true
+          armFolder: "$(folder)/$(firewallFolder)"
           policyFolder: "policies"
 
       #
@@ -238,7 +245,6 @@ jobs:
           targetType: "inline"
           script: |
             git commit -m "$(commit_message)"
-
 
       #
       # Push
