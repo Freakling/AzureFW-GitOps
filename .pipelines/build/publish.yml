@@ -12,8 +12,6 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      Install-Module -Name JsonUtils -RequiredVersion 0.4.0 -Force
-      
       Copy-Item -Path .\AzureFwGitOps\ -Destination C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules -Recurse -Force
       
       Import-Module AzureFwGitOps
