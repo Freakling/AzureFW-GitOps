@@ -141,13 +141,12 @@ Param(
                         $headers = 0..($ruleColl.rules.count-1) | Foreach-object{$ruleColl.rules[$_] | get-member -membertype NoteProperty | Select-Object -ExpandProperty Name} | Select-Object -unique | Sort-Object
                     }
                 }
-                Write-Output $thisCsvFile
                 #Create headers if merge is false or if the file is new
                 If($Merge -eq $false -or (-not (test-path -Path $thisCsvFile -PathType leaf))){
-                    $headers -join $Delimiter | Tee-Object $thisCsvFile Encoding utf8
+                    $headers -join $Delimiter | Out-File $thisCsvFile Encoding utf8
                 }
                 $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
-                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Tee-Object $thisCsvFile -append -Encoding utf8
+                $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-File $thisCsvFile -append -Encoding utf8
                 If($Merge -eq $true){
                     $mergedContent = Get-Content $thisCsvFile | Select-Object -unique
                     $mergedContent | Where-object{$_.Trim()} | Out-File $thisCsvFile -Encoding utf8
@@ -155,15 +154,18 @@ Param(
                 If($Changes){
                     $theseChanges = $Changes | Where-object {$_.type -eq 'rule' -and $_.file -eq "$(Split-Path -Path $policyFolder -leaf)\$($thisRuleCollGroup.name)\$($ruleColl.name)\$($ruleColl.rules[0].ruleType).csv".Replace('\','/')}
                     If($theseChanges){
-                        $headers -join $Delimiter | Tee-Object "removed.csv" -Encoding utf8
-                        $theseChanges.removedRows | Tee-Object "removed.csv" -Append -Encoding utf8
+                        $headers -join $Delimiter | Out-File "removed.csv" -Encoding utf8
+                        $theseChanges.removedRows | Out-File "removed.csv" -Append -Encoding utf8
                         $removedRules = Import-csv "removed.csv" -Delimiter $Delimiter -Encoding utf8
                         $modifiedContent = Import-csv $thisCsvFile -Delimiter $Delimiter -Encoding utf8 | Where-object{$removedRules.name -notcontains $_.name}
                         Remove-Item "removed.csv" -Force
                         Write-Output "updating after merging with changes"
-                        $modifiedContent  | ConvertTo-Csv -NoTypeInformation -Delimiter $Delimiter | Foreach-object {$_ -replace '"',''} | Tee-Object $thisCsvFile -Encoding utf8
+                        $modifiedContent | ConvertTo-Csv -NoTypeInformation -Delimiter $Delimiter | Foreach-object {$_ -replace '"',''} | Out-File $thisCsvFile -Encoding utf8
                     }
                 }
+                # Printing file content to console
+                "$thisCsvFile" | Write-Output
+                Import-csv $thisCsvFile -Delimiter $Delimiter -Encoding utf8 | Format-Table -AutoSize | Write-Output
             }
         }
     }
