@@ -251,6 +251,7 @@ Param(
                 #set all rules
                 $csvFiles | Foreach-object{
                     $rules = Import-csv -LiteralPath $_.FullName -Delimiter $Delimiter -Encoding utf8
+                   
                     # Need to make sure object members are correct. Currently ApplicationRule, NetworkRule and NatRule are supported
                     # https://learn.microsoft.com/en-us/azure/templates/microsoft.network/firewallpolicies/rulecollectiongroups?pivots=deployment-language-arm-template
                     $rules | ForEach-Object {
