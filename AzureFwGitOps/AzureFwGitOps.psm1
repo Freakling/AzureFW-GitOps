@@ -102,6 +102,9 @@ Param(
             $settings | ConvertTo-Json -Depth 100 | Format-Json | Out-file $PolicyFolder\policySettings.json -Encoding utf8
         }
 
+        #print settings
+        $settings | ConvertTo-Json -Depth 100 | Format-Json 
+
         #Assert folders for firewall and ruleCollGroups
         $settings | Foreach-Object {
             $policyName = $_.name
@@ -150,7 +153,7 @@ Param(
                         $null -eq (Get-Content $thisCsvFile)
                     )
                     {
-                        $headers -join $Delimiter | Out-File $thisCsvFile Encoding utf8
+                        $headers -join $Delimiter | Out-File $thisCsvFile -Encoding utf8
                     }
                     $propertiesExpression = "`"$(($headers | Foreach-object{'$($_.{0})' -f $_}) -join $Delimiter)`""
                     $ruleColl.rules | Foreach-object{(Invoke-Expression $propertiesExpression)} | Out-File $thisCsvFile -append -Encoding utf8
