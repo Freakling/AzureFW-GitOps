@@ -80,8 +80,6 @@ Headers follow ``FirewallPolicyRule`` objects, [more info in the docs](https://d
 
 [NatRule.csv](/policies/fwpolicy/rulecollgroup/net-rulecoll/NatRule.csv)
 
-
-
 ### policySettings
 ``policySettings.json`` provides the more static configuration where Policy configuration can be stored, example of configuration defined here is child-policies, RuleCollectionGroup priority settings etc.
 It is recommended to generate this file using the ``ConvertFrom-ArmFw`` function once the initial structure is created in Azure Portal.
@@ -125,15 +123,10 @@ Be careful with priority when editing this, as deployment will fail if there are
 # Assumptions
  - All firewall policies configured exist in the same resource group.
  - To enable two way sync the AzOps Pull pipeline must be run before a push, otherwise it will overwrite changes made in the portal that has not been pulled in.
- - The delimiter should to be ',' This is configurable in the script by parameters (-Delimiter). space (' ') and semicolon (';') is reserved and should not be used.
+ - The csv delimiter is default ','. space (' ') and semicolon (';') is reserved and should not be used.
+
 
 # TODO
-- Update so that the script can write to fwPolicy files. Currently it cannot associate child fw policies or rulecollectiongroups
 - Create fwPolicies by defining them here
-- ~~pipeline integration~~
 - videos going step-by-step on how to implement and use
-- ~~publish the script as a module in powershell gallery~~
-- add whatif output
-- ~~add functionality to print rules to console (whatif, writeToArm)~~
-  - validate should only write result and not deploy
-- ~~add functionality to remove configuration, currently the pipelines are only capable of adding~~
+- add validate pipeline
