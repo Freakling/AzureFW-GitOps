@@ -41,10 +41,10 @@ Param(
         }
         
         #Process all firewall policies and store in policies object (stored in policySettings.json)
-        $policies = @()
+        $settings = @()
         $resources | Where-Object {$_.type -eq 'Microsoft.Network/firewallPolicies'} | Foreach-object{
             $thisPolicy = $_
-            $policies += [pscustomobject]@{
+            $settings += [pscustomobject]@{
                 "name" = $thisPolicy.name
                 "childPolicies" = @($thisPolicy.properties.childpolicies.id)
                 "linkedRuleCollectionGroups" = @($thisPolicy.properties.ruleCollectionGroups)
@@ -72,7 +72,7 @@ Param(
         }
         
         #join ruleCollectionGroups and policies (in order to generate a policySettings.json)
-        $policies | ForEach-Object{
+        $settings | ForEach-Object{
             $thisPolicy = $_
             $thisRuleCollGroup = $ruleCollectionGroups | Where-Object{$_.name.split('/')[0] -eq $thisPolicy.name}
             If($thisPolicy.linkedRuleCollectionGroups.id.count -gt 0){
@@ -87,22 +87,23 @@ Param(
             }
         }
 
-        $policies = $policies | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups
+        $settings = $settings | Select-object -Property * -ExcludeProperty linkedRuleCollectionGroups
 
         If($Changes | where-object{$_.type -eq 'settings'}){
             # If changes are made to settings file, we do not want to overwrite these settings
             # in the future, we might want to do a diff and assert that updated configuration stays
             # but right now we just output a warning message
             Write-Warning "Changes are made in the policySettings.json file, changes pulled from ARM templates will be overwritten.`r`nIf changes made in ARM templates does not reflect output below or is incomplete, please run ConvertFrom-ArmFw again without changes once before running with included changes.`r`n`r`npolicySettings.json content:"
-            $Changes.innerData | Where-Object{$_} | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+            $Changes.innerData | Where-Object{$_} | ConvertTo-Json -Depth 100 | Format-Json | Out-File $PolicyFolder\policySettings.json -Encoding utf8
+            $settings = Get-Item -LiteralPath "$PolicyFolder\policySettings.json" | Get-Content | ConvertFrom-Json
         }
         Else{
             #Save everything, except linkedRuleCollectionGroups as they are also part of the member ruleCollectionGroups
-            $policies | ConvertTo-Json -Depth 100 | Format-Json | Tee-Object $PolicyFolder\policySettings.json -Encoding utf8
+            $settings | ConvertTo-Json -Depth 100 | Format-Json | Out-file $PolicyFolder\policySettings.json -Encoding utf8
         }
 
         #Assert folders for firewall and ruleCollGroups
-        $policies | Foreach-Object {
+        $settings | Foreach-Object {
             $policyName = $_.name
             New-Item "$PolicyFolder\$policyName" -ItemType Directory -Force
             Try{
@@ -110,7 +111,7 @@ Param(
                     $ruleCollGroup = $_.name.split('/')[-1]
                     New-Item "$PolicyFolder\$policyName\$ruleCollGroup" -ItemType Directory -Force
                     $_.ruleCollections | Foreach-Object{
-                        New-Item "$PolicyFolder\$policyName\$ruleCollGroup\$($_.name)" -ItemType Directory -Force
+                        New-Item "$PolicyFolder\$policyName\$ruleCollGroup\$($_.name)" -ItemType Directory -Force | Out-Null
                     }
                 }
             }
