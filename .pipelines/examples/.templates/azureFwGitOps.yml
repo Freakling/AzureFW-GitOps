@@ -18,6 +18,11 @@ parameters:
   displayName: FirewallPolicyDirectory
   type: string
 
+- name: force
+  displayName: Force execution regardless of git changes
+  type: boolean
+  default: false
+
 steps:
 
   #
@@ -97,6 +102,7 @@ steps:
           $policyFolder = Get-Item '${{parameters.policyFolder}}' | Select -ExpandProperty FullName
         }
         $Merge = ('${{parameters.merge}}' -eq 'true')
+        $Force = ('${{parameters.force}}' -eq 'true')
 
         # Find removed or changed rules
         $gitDiff = git diff --name-status HEAD^ HEAD
@@ -105,11 +111,11 @@ steps:
             If($gitDiff.EndsWith('.csv')){
               [array]$csvFiles = ($gitDiff)
             }
-            $settingsUpdated = If($gitDiff.EndsWith('.json')){$true}Else{$false}
+            $settingsUpdated = If(($gitDiff.EndsWith('policySettings.json')) -contains $true){$true}Else{$false}
           }
           Else{
             $csvFiles = $gitDiff | Where-object{$_.EndsWith('.csv')}
-            $settingsUpdated = If(($gitDiff | Where-object{$_.EndsWith('.json')})){$true}Else{$false}
+            $settingsUpdated = If(($gitDiff.EndsWith('policySettings.json')) -contains $true){$true}Else{$false}
           }
           If(($csvFiles -or $settingsUpdated)){$changes = @()}
           If($csvFiles){
@@ -142,16 +148,15 @@ steps:
             }
           }
           If($changes){
+            Write-Host "Changes detected:"
             $changes | ConvertTo-Json -depth 100 | Write-Output
-          }
-          Else{
-            Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
-            exit 1
           }
         }
         else {
-            Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
-            exit 1
+            If(-not $Force){
+              Write-Host '##[error]The validation pipeline failed because there is currently no change to be processed'
+              exit 1
+            }
         }
 
         $Env:PSModulePath = $Env:PSModulePath, '$(modulesFolder)' -join [IO.Path]::PathSeparator
