@@ -328,7 +328,7 @@ Param(
                 }
 
                 #write new settings to arm template
-                ($ruleCollGroupData | ConvertTo-Json -Depth 100).replace('""','') | Format-Json | Tee-Object "$ArmFolder\$ruleCollGroupFile" -Encoding utf8
+                ($ruleCollGroupData | ConvertTo-Json -Depth 100).replace('""','') | Format-Json | Tee-Object "$ArmFolder\$ruleCollGroupFile"
             }
         }
     }
