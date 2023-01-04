@@ -130,3 +130,4 @@ Be careful with priority when editing this, as deployment will fail if there are
 - Create fwPolicies by defining them here
 - videos going step-by-step on how to implement and use
 - add validate pipeline
+- time based fw rules / JIT rules
